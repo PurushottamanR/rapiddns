@@ -1,9 +1,8 @@
 package cmd
 
 import (
-	"fmt"
 	
-	"github.com/PurushottamanR/rapiddns/utilities"
+	"github.com/PurushottamanR/rapiddns/subdomains"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +12,6 @@ var subDomainCMD *cobra.Command = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		domain := args[0]
-		resp := utilities.NewDomain(domain).GetSubDomains()
-		fmt.Println(resp)
+		subdomains.NewDomain(domain).GetSubDomains()
 	},
 }
