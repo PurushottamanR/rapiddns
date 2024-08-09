@@ -1,6 +1,7 @@
 package utilities
 
 import (
+	"fmt"
 	"errors"
 	"io"
 	"net/http"
@@ -13,6 +14,9 @@ func FetchRawData(url string) (string, error) {
 		return "", errors.New("Error fetching raw data from RapidDNS")
 	}
 	
+	if resp.StatusCode != 200 {
+		return "", errors.New(fmt.Sprintf("Response code: %d", resp.StatusCode))
+	}
 	defer resp.Body.Close()
 	
 	rawData, err := io.ReadAll(resp.Body)
