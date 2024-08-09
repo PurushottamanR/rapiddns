@@ -2,8 +2,6 @@ package subdomains
 
 import (
 	"fmt"
-	"log"
-	"time"
 	
 	"github.com/PurushottamanR/rapiddns/utilities"
 )
@@ -34,11 +32,12 @@ func NewDomain(hostname string) *domain {
 	}
 }
 
-func FetchandExtract(url string) []Record {
-	var records []Record = make([]Record, 0, 100)
+func FetchandExtract(url string) ([]Record, error) {
+	var records []Record = make([]Record, 0, 100) 
+	
 	httpResp, err := utilities.FetchRawData(url)
 	if err != nil {
-		log.Fatalln(err)
+		return []Record{}, err
 	}
 
 	matches := utilities.ExtractRecords(httpResp, pattern)
@@ -55,28 +54,31 @@ func FetchandExtract(url string) []Record {
     		}
     		records = append(records, record)
     	}
-	return records
+	return records, err
 }
 
-func (d *domain) SubDomains(all bool, page int) []Record {
-	
+func (d *domain) SubDomains(all bool, page int) ([]Record, error) {
+
 	if !all {
 		url := fmt.Sprintf(subdomainURL, d.hostname, page)
-		return FetchandExtract(url)
-	    	
+		return FetchandExtract(url) 	
 	}  else {
 		var records []Record = make([]Record, 0, 100)
+		var err error
 		for page := 1;; page++ {
 			url := fmt.Sprintf(subdomainURL, d.hostname, page)
-			pageRecords := FetchandExtract(url)
+			pageRecords, err := FetchandExtract(url)
+			if err != nil {
+				return records, err
+			}
+			
 			if len(pageRecords) > 0 {
 				records = append(records, pageRecords...)
 				fmt.Printf("Nof Records: %d\r", len(records))		
 			} else {
 				break
 			}
-			time.Sleep(time.Second * 1)		
 		}
-		return records	
+		return records, err	
 	}
 }

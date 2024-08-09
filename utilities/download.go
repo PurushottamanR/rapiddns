@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"time"
 )
 
 func FetchRawData(url string) (string, error) {
@@ -14,9 +15,24 @@ func FetchRawData(url string) (string, error) {
 		return "", errors.New("Error fetching raw data from RapidDNS")
 	}
 	
+	maxRetries := 2
+	timeDelay := time.Second * 2
+	
 	if resp.StatusCode != 200 {
-		return "", errors.New(fmt.Sprintf("Response code: %d", resp.StatusCode))
+		//retry thrice before quitting
+		for i := 0; i < maxRetries; i++ {
+			resp, err = http.Get(url)
+			if resp.StatusCode != 200 {
+				resp.Body.Close()
+			}
+			time.Sleep(timeDelay)
+		}
+		
+		if resp.StatusCode != 200 {
+			return "", errors.New(fmt.Sprintf("Response code: %d", resp.StatusCode))
+		}
 	}
+	
 	defer resp.Body.Close()
 	
 	rawData, err := io.ReadAll(resp.Body)

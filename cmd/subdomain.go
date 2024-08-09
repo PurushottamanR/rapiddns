@@ -13,9 +13,12 @@ var subDomainCMD *cobra.Command = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		domain := args[0]
-		records := subdomains.NewDomain(domain).SubDomains(all, page)
+		records, err := subdomains.NewDomain(domain).SubDomains(all, page)
 		for _, record := range records {
 			fmt.Println(record)
+		}
+		if err != nil {
+			fmt.Println(err)
 		}
 	},
 }
