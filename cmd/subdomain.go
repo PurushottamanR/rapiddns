@@ -3,16 +3,16 @@ package cmd
 import (
 	"fmt"
 	
-	"github.com/PurushottamanR/rapiddns/subdomains"
+	"github.com/PurushottamanR/rapiddns/subdomain"
 	"github.com/spf13/cobra"
 )
 
-var subDomainoptions *subdomains.Options = &subdomains.Options{}
+var options *subdomain.Options = &subdomain.Options{}
 
 func subDomainSetup(cmd *cobra.Command) {
-	cmd.Flags().BoolVarP(&subDomainoptions.All, "all", "a", false, "Fetch all records or just first 100 records")
-	cmd.Flags().IntVarP(&subDomainoptions.Page, "page", "p", 1, "Fetch records until page")
-	cmd.Flags().BoolVarP(&subDomainoptions.Verbose, "verbose", "v", false, "Dump records as obtained")
+	cmd.Flags().BoolVarP(&options.All, "all", "a", false, "Fetch all records or just first 100 records")
+	cmd.Flags().IntVarP(&options.Page, "page", "p", 1, "Fetch records until page")
+	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "v", false, "Dump records as obtained")
 }
 
 var subDomainCMD *cobra.Command = &cobra.Command{
@@ -20,8 +20,10 @@ var subDomainCMD *cobra.Command = &cobra.Command{
 	Short: "list subdomains for a given domain",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		subDomainoptions.Domain = args[0]
-		recs, err := subdomains.SubDomains(subDomainoptions)
+		
+		options.Domain = args[0]
+		
+		recs, err := subdomain.SubDomains(options)
 		if err != nil {
 			fmt.Println(err)
 		}

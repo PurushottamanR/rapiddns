@@ -25,10 +25,9 @@ func Execute() {
 // Setup adds all subcommands to the root command.
 func Setup() {
 
-	rootCMD.CompletionOptions.DisableDefaultCmd = true
-
 	subDomainSetup(subDomainCMD)
 	
+	rootCMD.CompletionOptions.DisableDefaultCmd = true
 	rootCMD.AddCommand(subDomainCMD)
 	rootCMD.AddCommand(ipCMD)
 
