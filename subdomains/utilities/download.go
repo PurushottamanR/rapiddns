@@ -9,32 +9,33 @@ import (
 	"time"
 )
 
+func FetchRawResponse(url string) (*http.Response, error) {
+	return http.Get(url)
+}
+
 func FetchRawData(url string) (string, error) {
-	resp, err := http.Get(url)
+	resp, err := FetchRawResponse(url)
 	if err != nil {
 		return "", errors.New("Error fetching raw data from RapidDNS")
 	}
 	
-	maxRetries := 2
-	timeDelay := time.Second * 2
+	if resp.StatusCode == 429 {
 	
-	if resp.StatusCode != 200 {
-		//retry thrice before quitting
-		for i := 0; i < maxRetries; i++ {
-			resp, err = http.Get(url)
-			if resp.StatusCode != 200 {
-				resp.Body.Close()
-			}
-			time.Sleep(timeDelay)
+		time.Sleep(time.Second * 10)
+		resp, err := FetchRawResponse(url)
+		if err != nil {
+			return "", errors.New("Error fetching raw data from RapidDNS")
+		}
+		//after second attempt
+		if resp.StatusCode == 429 {
+			return "", errors.New(fmt.Sprintf("Response code: %d, try after sometime...", resp.StatusCode))
 		}
 		
-		if resp.StatusCode != 200 {
-			return "", errors.New(fmt.Sprintf("Response code: %d", resp.StatusCode))
-		}
+	} else if resp.StatusCode != 200 {
+		return "", errors.New(fmt.Sprintf("Response code: %d", resp.StatusCode))
 	}
 	
 	defer resp.Body.Close()
-	
 	rawData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", errors.New("Error reading response")

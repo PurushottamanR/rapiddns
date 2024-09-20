@@ -3,8 +3,15 @@ package subdomains
 import (
 	"fmt"
 	
-	"github.com/PurushottamanR/rapiddns/utilities"
+	"github.com/PurushottamanR/rapiddns/subdomains/utilities"
 )
+
+type Options struct {
+	Domain string
+	All bool
+	Page int
+	Verbose bool
+}
 
 type Record struct {
 	ID string
@@ -14,30 +21,30 @@ type Record struct {
 	Date string
 }
 
-type domain struct {
-	hostname string
-}
+type Records []Record
 
 func (r Record) String() string {
 	return fmt.Sprintf("%s %s %s %s", r.Subdomain, r.Value, r.RecType, r.Date)
 }
 
+func (R Records) String() string {
+	var recs string = ""
+	for _, record := range R {
+		recs += record.String() + "\n"
+	}
+	return recs
+}
+
 var pattern = `(?m)<tr>\s*<th.*>(?P<row>.*)</th>\s*<td>(?P<subdomain>.*)</td>\s*<td>(<a\s*.*>)*\s*(?P<record>.*)\s*(</a>)*\s*</td>\s*<td>(?P<recordType>.*)</td>\s*<td>(?P<date>.*)</td>\s*</tr>`
 var subdomainURL = "https://rapiddns.io/subdomain/%s?page=%d"
 
-func NewDomain(hostname string) *domain {
-	
-	return &domain{
-		hostname: hostname,
-	}
-}
 
-func FetchandExtract(url string) ([]Record, error) {
-	var records []Record = make([]Record, 0, 100) 
+func FetchandExtract(url string) (Records, error) {
+	var records Records = make(Records, 0, 100) 
 	
 	httpResp, err := utilities.FetchRawData(url)
 	if err != nil {
-		return []Record{}, err
+		return records, err
 	}
 
 	matches := utilities.ExtractRecords(httpResp, pattern)
@@ -57,16 +64,21 @@ func FetchandExtract(url string) ([]Record, error) {
 	return records, err
 }
 
-func (d *domain) SubDomains(all bool, page int) ([]Record, error) {
-
-	if !all {
-		url := fmt.Sprintf(subdomainURL, d.hostname, page)
-		return FetchandExtract(url) 	
-	}  else {
-		var records []Record = make([]Record, 0, 100)
+func SubDomains(opts *Options) (Records, error) {
+	
+	if !opts.All && opts.Page == 1 { 
+	
+		//Single and first page by default
+		url := fmt.Sprintf(subdomainURL, opts.Domain, opts.Page)
+		return FetchandExtract(url)
+		 	
+	}  else if !opts.All && opts.Page > 1 { 
+		
+		//multiple pages	
+		var records Records = make(Records, 0, 100)
 		var err error
-		for page := 1;; page++ {
-			url := fmt.Sprintf(subdomainURL, d.hostname, page)
+		for page := 1; page <= opts.Page; page++ {
+			url := fmt.Sprintf(subdomainURL, opts.Domain, page)
 			pageRecords, err := FetchandExtract(url)
 			if err != nil {
 				return records, err
@@ -74,11 +86,30 @@ func (d *domain) SubDomains(all bool, page int) ([]Record, error) {
 			
 			if len(pageRecords) > 0 {
 				records = append(records, pageRecords...)
-				fmt.Printf("Nof Records: %d\r", len(records))		
+				fmt.Printf("[Page: %d][Nof Records: %d][Total Records: %d]\r", page, len(pageRecords), len(records))		
+			}
+		}
+		return records, err
+		
+	} else {
+		
+		//every page - iterate until less than 100
+		var records Records = make(Records, 0, 100)
+		var err error
+		for page := 1;; page++ {
+			url := fmt.Sprintf(subdomainURL, opts.Domain, page)
+			pageRecords, err := FetchandExtract(url)
+			if err != nil {
+				return records, err
+			}
+			
+			if len(pageRecords) > 0 {
+				records = append(records, pageRecords...)
+				fmt.Printf("[Page: %d][Nof Records: %d][Total Records: %d]\r", page, len(pageRecords), len(records))		
 			} else {
 				break
 			}
 		}
-		return records, err	
+		return records, err
 	}
 }
