@@ -23,11 +23,8 @@ var subDomainCMD *cobra.Command = &cobra.Command{
 		
 		options.Domain = args[0]
 		
-		recs, err := subdomain.SubDomains(options)
-		if err != nil {
-			fmt.Println(err)
-		}
-		fmt.Println(recs)
+		result := subdomain.SubDomains(options)
+		fmt.Println(result)
 		
 	},
 }
