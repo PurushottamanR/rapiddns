@@ -14,6 +14,6 @@ var pattern = `(?m)<tr>\s*<th.*>(?P<row>.*)</th>\s*<td>(?P<subdomain>.*)</td>\s*
 
 func SubDomains(opts *Options) Records {
 
-	src := NewSource("https://rapiddns.io/subdomain/%s?page=%d", "rapiddns", pattern)	
+	src := NewSource("https://rapiddns.io/subdomain/%s?page=%d", "rapiddns", pattern, opts)	
 	return src.GetSubDomains(opts)
 }

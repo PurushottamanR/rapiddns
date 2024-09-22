@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 	"regexp"
 	"time"
@@ -14,16 +15,18 @@ type Source struct {
 	URLFormat string
 	Name string
 	Pattern string
+	Opts *Options
 }
 
 
 
-func NewSource(urlformat string, name string, pattern string) *Source {
+func NewSource(urlformat string, name string, pattern string, opts *Options) *Source {
 	
 	src := Source{
 		URLFormat: urlformat,
 		Name: name,
 		Pattern: pattern,
+		Opts: opts,
 	}
 	
 	return &src
@@ -52,7 +55,7 @@ func (s *Source) Fetch(url string) (string, error) {
 	if resp.StatusCode != 200 {
 		//after second attempt
 		if resp.StatusCode == 429 {
-			return "", errors.New(fmt.Sprintf("Response code: %d, try after sometime...", resp.StatusCode))
+			return "", errors.New(fmt.Sprintf("URL: %s, Response code: %d, try after sometime...", resp.Request.URL, resp.StatusCode))
 		} else {
 			return "", errors.New(fmt.Sprintf("Response code: %d", resp.StatusCode))
 		}
@@ -109,18 +112,23 @@ func (s *Source) Extract(matches [][]string) Records {
 }
 
 func (s *Source) GetResultsFromPage(url string, recs chan Records) {
-	resp, _ := s.Fetch(url)
+	resp, err := s.Fetch(url)
+	if err != nil && s.Opts.Verbose {
+		log.Println(err)
+	}
 	matches := s.Match(resp, s.Pattern)
 	records := s.Extract(matches)
 	
 	recs <- records
 }
 
-func (s *Source) GetResults(urls []string, recs chan Records) {
-	
+func (s *Source) GetResults(urls []string) (chan Records) {
+	recs := make(chan Records, len(urls)) 
 	for _, url := range urls {
 		go s.GetResultsFromPage(url, recs)
 	}
+	
+	return recs
 }
 
 
@@ -135,9 +143,7 @@ func (s *Source) GetSubDomains(opts *Options) Records {
 			urls = append(urls, u)
 		}
 		
-		recs := make(chan Records, len(urls)) 
-		go s.GetResults(urls, recs)
-		
+		recs := s.GetResults(urls)
 		for range urls {
 			r := <- recs
 			records = append(records, r...)
@@ -145,18 +151,19 @@ func (s *Source) GetSubDomains(opts *Options) Records {
 				fmt.Printf("Retrieved total records: %d     \r", len(records))
 			}
 		}
+		
+		
 		close(recs)
 		
 		
 	} else {
 	
-		urls = append(urls, fmt.Sprintf(s.GetURLFormat(), opts.Domain, opts.Pages))
-		recs := make(chan Records)
-		defer close(recs)
+		urls = append(urls, fmt.Sprintf(s.GetURLFormat(), opts.Domain, opts.Pages)) 
 		
-		go s.GetResults(urls, recs)
-		
+		recs := s.GetResults(urls)
 		records = <- recs
+		close(recs)
+		
 		if opts.Verbose {
 			fmt.Printf("Retrieved total records: %d     \r", len(records))
 		}
