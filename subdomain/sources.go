@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strconv"
 	"time"
 )
 
@@ -17,8 +18,6 @@ type Source struct {
 	Pattern string
 	Opts *Options
 }
-
-
 
 func NewSource(urlformat string, name string, pattern string, opts *Options) *Source {
 	
@@ -30,6 +29,19 @@ func NewSource(urlformat string, name string, pattern string, opts *Options) *So
 	}
 	
 	return &src
+}
+
+func (s *Source) GetTotalRecords() int {
+	resp, _ := s.Fetch(fmt.Sprintf(s.GetURLFormat(), s.Opts.Domain, s.Opts.Pages))
+	
+	pagePattern := `class="page-link" href="/.*/[^"]+\?page=(?P<page>\d+)">`
+	re := regexp.MustCompile(pagePattern)
+	
+	matches := re.FindAllStringSubmatch(resp, -1)
+	pageGroup := re.SubexpIndex("page")
+	
+	page, _ := strconv.Atoi(matches[0][pageGroup])
+	return page
 }
 
 func (s *Source) GetURLFormat() string {
@@ -132,14 +144,14 @@ func (s *Source) GetResults(urls []string) (chan Records) {
 }
 
 
-func (s *Source) GetSubDomains(opts *Options) Records {
+func (s *Source) GetSubDomains() Records {
 	var urls []string = []string{}
 	var records Records = make(Records, 0, 100)
 	
-	if opts.Pages > 1 {
+	if s.Opts.Pages > 1 {
 		
-		for page := 1; page <= opts.Pages; page++ {
-			u := fmt.Sprintf(s.GetURLFormat(), opts.Domain, page)
+		for page := 1; page <= s.Opts.Pages; page++ {
+			u := fmt.Sprintf(s.GetURLFormat(), s.Opts.Domain, page)
 			urls = append(urls, u)
 		}
 		
@@ -147,7 +159,7 @@ func (s *Source) GetSubDomains(opts *Options) Records {
 		for range urls {
 			r := <- recs
 			records = append(records, r...)
-			if opts.Verbose {
+			if s.Opts.Verbose {
 				fmt.Printf("Retrieved total records: %d     \r", len(records))
 			}
 		}
@@ -156,15 +168,36 @@ func (s *Source) GetSubDomains(opts *Options) Records {
 		close(recs)
 		
 		
+	} else if s.Opts.All {
+	
+		pages := s.GetTotalRecords()
+		for page := 1; page <= pages; page++ {
+			u := fmt.Sprintf(s.GetURLFormat(), s.Opts.Domain, page)
+			urls = append(urls, u)
+		}
+		
+		recs := s.GetResults(urls)
+		for range urls {
+			r := <- recs
+			records = append(records, r...)
+			if s.Opts.Verbose {
+				fmt.Printf("Retrieved total records: %d     \r", len(records))
+			}
+		}
+		
+		close(recs)
+		
+	} else if s.Opts.Total {
+		fmt.Println("Total pages:", s.GetTotalRecords())
 	} else {
 	
-		urls = append(urls, fmt.Sprintf(s.GetURLFormat(), opts.Domain, opts.Pages)) 
+		urls = append(urls, fmt.Sprintf(s.GetURLFormat(), s.Opts.Domain, s.Opts.Pages)) 
 		
 		recs := s.GetResults(urls)
 		records = <- recs
 		close(recs)
 		
-		if opts.Verbose {
+		if s.Opts.Verbose {
 			fmt.Printf("Retrieved total records: %d     \r", len(records))
 		}
 	}

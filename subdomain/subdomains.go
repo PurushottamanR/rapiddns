@@ -7,10 +7,12 @@ type Options struct {
 	Domain string
 	All bool
 	Pages int
+	Total bool
 	Verbose bool
 }
 
 func NewOptions() *Options {
+
 	opts := &Options {
 		Domain: "",
 		All: false,
@@ -26,5 +28,5 @@ var pattern = `(?m)<tr>\s*<th.*>(?P<row>.*)</th>\s*<td>(?P<subdomain>.*)</td>\s*
 func SubDomains(opts *Options) Records {
 
 	src := NewSource("https://rapiddns.io/subdomain/%s?page=%d", "rapiddns", pattern, opts)	
-	return src.GetSubDomains(opts)
+	return src.GetSubDomains()
 }
