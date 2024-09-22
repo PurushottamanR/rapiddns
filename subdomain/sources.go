@@ -33,14 +33,15 @@ func NewSource(urlformat string, name string, pattern string, opts *Options) *So
 
 func (s *Source) GetTotalRecords() int {
 	resp, _ := s.Fetch(fmt.Sprintf(s.GetURLFormat(), s.Opts.Domain, s.Opts.Pages))
-	
+	var page int = 1
 	pagePattern := `class="page-link" href="/.*/[^"]+\?page=(?P<page>\d+)">`
 	re := regexp.MustCompile(pagePattern)
 	
 	matches := re.FindAllStringSubmatch(resp, -1)
-	pageGroup := re.SubexpIndex("page")
-	
-	page, _ := strconv.Atoi(matches[0][pageGroup])
+	if len(matches) > 0 {
+		pageGroup := re.SubexpIndex("page")
+		page, _ = strconv.Atoi(matches[0][pageGroup])
+	}
 	return page
 }
 
