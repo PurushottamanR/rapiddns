@@ -14,10 +14,9 @@ type Record struct {
 
 type Records []Record
 
-type SubDomainResults struct {
+/*type Results struct {
 	records	   Records
-	Err	   error
-}
+}*/
 
 func (r *Record) String() string {
 	return fmt.Sprintf("%s %s %s %s", r.Subdomain, r.Value, r.RecType, r.Date)
@@ -31,18 +30,20 @@ func (r Records) String() string {
 	return recs
 }
 
-func (r *SubDomainResults) GetRecords() Records {
+/*
+func (r *Results) GetRecords() Records {
 	return r.records
 }
 
-func (r *SubDomainResults) AddRecords(rec Records) {
+func (r *Results) AddRecords(rec Records) {
 	r.records = append(r.records, rec...)
 }
 
-func (r *SubDomainResults) String() string {
+func (r *Results) String() string {
 	if r.Err != nil {
 		return r.Err.Error()
 	} else {
 		return r.records.String()
 	}
 }
+*/

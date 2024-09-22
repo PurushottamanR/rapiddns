@@ -11,7 +11,7 @@ var options *subdomain.Options = &subdomain.Options{}
 
 func subDomainSetup(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.All, "all", "a", false, "Fetch all records or just first 100 records")
-	cmd.Flags().IntVarP(&options.Page, "page", "p", 1, "Fetch records until page")
+	cmd.Flags().IntVarP(&options.Pages, "pages", "p", 1, "Fetch records until page")
 	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "v", false, "Dump records as obtained")
 }
 
