@@ -10,6 +10,17 @@ type Options struct {
 	Verbose bool
 }
 
+func NewOptions() *Options {
+	opts := &Options {
+		Domain: "",
+		All: false,
+		Pages: 1,
+		Verbose: false,
+	}
+	
+	return opts
+}
+
 var pattern = `(?m)<tr>\s*<th.*>(?P<row>.*)</th>\s*<td>(?P<subdomain>.*)</td>\s*<td>(<a\s*.*>)*\s*(?P<record>.*)\s*(</a>)*\s*</td>\s*<td>(?P<recordType>.*)</td>\s*<td>(?P<date>.*)</td>\s*</tr>`
 
 func SubDomains(opts *Options) Records {
