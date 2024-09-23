@@ -8,6 +8,7 @@ type Options struct {
 	All bool
 	Pages int
 	Total bool
+	Threads int
 	Verbose bool
 }
 
@@ -17,6 +18,8 @@ func NewOptions() *Options {
 		Domain: "",
 		All: false,
 		Pages: 1,
+		Total: false,
+		Threads: 10,
 		Verbose: false,
 	}
 	

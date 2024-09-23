@@ -124,7 +124,54 @@ func (s *Source) Extract(matches [][]string) Records {
 	return records
 }
 
-func (s *Source) GetResultsFromPage(url string, recs chan Records) {
+func (s *Source) GetResultsFromPageThreaded(urlsCh chan string, resultsCh chan Records) {
+	
+	for url := range urlsCh {
+	
+		resp, err := s.Fetch(url)
+		if err != nil && s.Opts.Verbose {
+			log.Println(err)
+			resultsCh <- Records{}
+			continue
+		}
+		matches := s.Match(resp, s.Pattern)
+		records := s.Extract(matches)
+	
+		resultsCh <- records
+	}
+}
+
+func (s *Source) GetResultsThreaded(urls []string) Records {
+	urlsCh := make(chan string, 20)
+	resultsCh := make(chan Records)
+	
+	var records Records = make(Records, 0, 100)
+	
+	for i := 0; i < s.Opts.Threads; i++ {
+		go s.GetResultsFromPageThreaded(urlsCh, resultsCh)
+	}
+	
+	go func(){
+		for _, url := range urls {
+			urlsCh <- url
+		}	
+	}()
+	
+	
+	for range urls {
+		r := <- resultsCh
+		records = append(records, r...)
+		fmt.Printf("Retrieved total records: %d     \r", len(records))
+	}
+	
+	close(urlsCh)
+	close(resultsCh)
+	
+	return records
+}
+
+
+func (s *Source) GetResultsFromPage(url string) Records {
 	resp, err := s.Fetch(url)
 	if err != nil && s.Opts.Verbose {
 		log.Println(err)
@@ -132,22 +179,17 @@ func (s *Source) GetResultsFromPage(url string, recs chan Records) {
 	matches := s.Match(resp, s.Pattern)
 	records := s.Extract(matches)
 	
-	recs <- records
+	return records
 }
 
-func (s *Source) GetResults(urls []string) (chan Records) {
-	recs := make(chan Records, len(urls)) 
-	for _, url := range urls {
-		go s.GetResultsFromPage(url, recs)
-	}
-	
-	return recs
+func (s *Source) GetResults(url string) Records {
+	 return s.GetResultsFromPage(url)
 }
 
 
 func (s *Source) GetSubDomains() Records {
 	var urls []string = []string{}
-	var records Records = make(Records, 0, 100)
+	var records Records
 	
 	if s.Opts.Pages > 1 {
 		
@@ -156,17 +198,7 @@ func (s *Source) GetSubDomains() Records {
 			urls = append(urls, u)
 		}
 		
-		recs := s.GetResults(urls)
-		for range urls {
-			r := <- recs
-			records = append(records, r...)
-			if s.Opts.Verbose {
-				fmt.Printf("Retrieved total records: %d     \r", len(records))
-			}
-		}
-		
-		
-		close(recs)
+		records = s.GetResultsThreaded(urls)
 		
 		
 	} else if s.Opts.All {
@@ -177,30 +209,20 @@ func (s *Source) GetSubDomains() Records {
 			urls = append(urls, u)
 		}
 		
-		recs := s.GetResults(urls)
-		for range urls {
-			r := <- recs
-			records = append(records, r...)
-			if s.Opts.Verbose {
-				fmt.Printf("Retrieved total records: %d     \r", len(records))
-			}
-		}
+		records = s.GetResultsThreaded(urls)
 		
-		close(recs)
 		
 	} else if s.Opts.Total {
+	
 		fmt.Println("Total pages:", s.GetTotalRecords())
+		
 	} else {
 	
-		urls = append(urls, fmt.Sprintf(s.GetURLFormat(), s.Opts.Domain, s.Opts.Pages)) 
+		url := fmt.Sprintf(s.GetURLFormat(), s.Opts.Domain, s.Opts.Pages) 
 		
-		recs := s.GetResults(urls)
-		records = <- recs
-		close(recs)
+		records = s.GetResults(url)
 		
-		if s.Opts.Verbose {
-			fmt.Printf("Retrieved total records: %d     \r", len(records))
-		}
+		fmt.Printf("Retrieved total records: %d     \r", len(records))
 	}
 	
 	return records

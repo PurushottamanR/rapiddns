@@ -15,6 +15,7 @@ func subDomainSetup(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.All, "all", "a", false, "Fetch all records or just first 100 records")
 	cmd.Flags().IntVarP(&options.Pages, "pages", "p", 1, "Fetch records until page")
 	cmd.Flags().BoolVarP(&options.Total, "total", "t", false, "Just get total no of records not the list of domains")
+	cmd.Flags().IntVarP(&options.Threads, "threads", "T", 15, "No of threads to use")
 	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "v", false, "Dump verbose info like the errors and pages missed")
 }
 
