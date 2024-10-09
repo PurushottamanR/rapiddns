@@ -1,16 +1,25 @@
 package cmd
 
 import (
+	"fmt"	
+	
+	"github.com/PurushottamanR/rapiddns/iptools"
 	"github.com/spf13/cobra"
 )
 
+var ipOpts *iptools.Options = iptools.NewOptions()
+
+func ipToolsSetup(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&ipOpts.IPaddr, "address", "a", "", "The IPv4 address to query for")
+	cmd.MarkFlagRequired("address")
+}
+
 
 var ipCMD *cobra.Command = &cobra.Command{
-	Use:   "ip <address>",
-	Short: "list domains for a given IP",
-	Args:  cobra.ExactArgs(1),
+	Use:   "ip",
+	Short: "list ip details",
 	Run: func(cmd *cobra.Command, args []string) {
-		//ip := args[0]
-		
+		details := iptools.GetIPDetails(ipOpts)
+		fmt.Println(details)
 	},
 }

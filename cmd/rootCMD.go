@@ -26,6 +26,7 @@ func Execute() {
 func Setup() {
 
 	subDomainSetup(subDomainCMD)
+	ipToolsSetup(ipCMD)
 	
 	rootCMD.CompletionOptions.DisableDefaultCmd = true
 	rootCMD.AddCommand(subDomainCMD)
