@@ -146,7 +146,7 @@ func (i *IPDetails) String() string {
 }
 
 func GetIPDetails(options *Options) *IPDetails {
-	url := fmt.Sprintf("https://api.ipapi.is/?q=%s", options.IPaddr)
+	url := fmt.Sprintf("https://<url>/?q=%s", options.IPaddr)
 	var ipdetails *IPDetails = &IPDetails{}
 
 	resp, err := http.Get(url)
